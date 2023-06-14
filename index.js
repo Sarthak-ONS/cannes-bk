@@ -1,6 +1,5 @@
 require("dotenv").config();
 
-
 const path = require("path");
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
@@ -8,19 +7,22 @@ const cloudinary = require("cloudinary");
 const mongoose = require("mongoose");
 const morgan = require("morgan");
 const express = require("express");
+const subdomain = require("express-subdomain");
 
 const authRoutes = require("./routes/auth");
+const mediaRouter = require("./routes/media");
 
 const app = express();
-
 
 const PORT = process.env.PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
 
+app.use(subdomain("api", mediaRouter));
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use(
   fileUpload({
@@ -74,6 +76,7 @@ app.use((req, res, next) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/cdn", mediaRouter);
 
 app.use((error, req, res, next) => {
   console.log(error);
