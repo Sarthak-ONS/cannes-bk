@@ -7,14 +7,7 @@ const nodemailer = require("nodemailer");
 const { validationResult } = require("express-validator");
 
 const User = require("../models/user");
-
-let transporter = nodemailer.createTransport({
-  service: "hotmail",
-  auth: {
-    user: "herculesproject7@outlook.com",
-    pass: "hercules7@7",
-  },
-});
+const { sendMail } = require("../utils/email-util");
 
 exports.signup = async (req, res, next) => {
   try {
@@ -35,11 +28,13 @@ exports.signup = async (req, res, next) => {
       return next(error);
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const verificationToken = generateVerificationToken();
+
     const newUser = new User({
       name,
       email,
-      password: hashedPassword,
+      password,
+      verificationToken,
       image: {
         id: "image id",
         secure_url: "secure url def",
@@ -47,11 +42,50 @@ exports.signup = async (req, res, next) => {
     });
 
     await newUser.save();
+
+    const options = {
+      email: email,
+      subject: "Welcome to Cannes",
+      html: `
+      Dear ${name}, We are pleased that you joined us!,
+      Please verify your email, by clicking on the link below.
+
+      <p>Click <a href="http://localhost:4000/auth/verify/${verificationToken}">here</a> to verify your email.</p>
+
+      `,
+    };
+
+    await sendMail(options);
+
     return res.status(200).json({ message: "User Created Successfully!" });
   } catch (err) {
     console.log(err);
     const error = new Error("Please try again later!");
     error.httpStatusCode = 500;
+    next(err);
+  }
+};
+
+exports.verifyEmail = async (req, res, next) => {
+  const token = req.params.token;
+
+  try {
+    const user = await User.findOne({ verificationToken: token });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "Invalid token" });
+    }
+    user.isVerified = true;
+    user.verificationToken = undefined;
+
+    await user.save();
+    res.status(200).json({ status: "SUCCESS", message: "User is verified" });
+  } catch (error) {
+    console.log(error);
+    const err = new Error("Could not Verify User");
+    err.httpStatusCode = 400;
     next(err);
   }
 };
@@ -93,6 +127,16 @@ exports.login = async (req, res, next) => {
       }
     );
 
+    const options = {
+      email: email,
+      subject: "LoggedIn Successfully",
+      html: `
+      Dear ${user.name}, You have logged in successfully!
+      `,
+    };
+
+    await sendMail(options);
+
     return res.status(200).json({ token, userId: user._id.toString() });
   } catch (err) {
     const error = new Error(err);
@@ -116,7 +160,7 @@ exports.forgotPassword = async (req, res, next) => {
 
     const forgotToken = user.getForgotPasswordToken();
     await user.save();
-    const myUrl = `${req.protocol}://localhost:3000/auth/password/reset/${forgotToken}`;
+    const myUrl = `${process.env.FRONTEND_SERVER_URL}/auth/password/reset/${forgotToken}`;
 
     const options = {
       email: email,
@@ -130,27 +174,12 @@ exports.forgotPassword = async (req, res, next) => {
       `,
     };
 
-    transporter.sendMail(
-      {
-        from: "herculesproject7@outlook.com",
-        to: options.email,
-        subject: options.subject,
-        html: options.html,
-      },
-      (err, inf) => {
-        if (err) {
-          console.log("EMAIL SENT FAILED");
-        }
-        console.log("EMAIL SENT SUCCESSFULLY");
-      }
-    );
+    await sendMail(options);
 
-    return res
-      .status(200)
-      .json({
-        status: "SUCCESS",
-        message: "Please follow instructions sent on email!",
-      });
+    return res.status(200).json({
+      status: "SUCCESS",
+      message: "Please follow instructions sent on email!",
+    });
   } catch (error) {
     user.resetToken = undefined;
     user.resetTokenExpiration = undefined;
@@ -209,3 +238,7 @@ exports.passwordReset = async (req, res, next) => {
     return next(err);
   }
 };
+
+function generateVerificationToken() {
+  return crypto.randomBytes(30).toString("hex");
+}

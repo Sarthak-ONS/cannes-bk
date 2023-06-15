@@ -57,6 +57,8 @@ router.post(
   authController.signup
 );
 
+router.get("/verify/:token", authController.verifyEmail);
+
 // POST Forgot Password
 router.post("/forgot", authController.forgotPassword);
 
