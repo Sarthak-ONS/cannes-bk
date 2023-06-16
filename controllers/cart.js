@@ -1,5 +1,4 @@
 const Cart = require("../models/cart");
-const Product = require("../models/product");
 
 exports.addtoCart = async (req, res, next) => {
   try {
@@ -9,16 +8,42 @@ exports.addtoCart = async (req, res, next) => {
     const cart = await Cart.findOne({ userId });
 
     if (!cart) {
-      Cart.create({
+      await Cart.create({
         userId,
         items: [
           {
-            productId,
+            product: productId,
             quantity: 1,
           },
         ],
       });
+
+      res.status(200).json({
+        status: "SUCCESS",
+        message: "Cart Created, Product is Added",
+        cart,
+      });
     }
+
+    let itemIndex = cart.items.findIndex(
+      (p) => p.product.toString() === productId
+    );
+
+    cart.items.forEach((p) => {
+      console.log(p.product.toString());
+    });
+
+    if (itemIndex > -1) {
+      console.log("ITEM IS ALREADY IN CART");
+      let productItem = cart.items[itemIndex];
+      productItem.quantity = productItem.quantity + 1;
+      cart.items[itemIndex] = productItem;
+    } else {
+      cart.items.push({ product: productId, quantity: 1 });
+    }
+    await cart.save();
+
+    res.status(200).json({ status: "SUCCESS", cart });
   } catch (error) {
     console.log(error);
     const err = new Error("Unable to add to Cart");
