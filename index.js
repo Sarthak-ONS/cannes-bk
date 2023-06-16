@@ -8,9 +8,13 @@ const mongoose = require("mongoose");
 const morgan = require("morgan");
 const express = require("express");
 const subdomain = require("express-subdomain");
+const cookieParser = require("cookie-parser");
+
 // const helmet = require("helmet");
 
 const authRoutes = require("./routes/auth");
+const cartRoutes = require("./routes/cart");
+
 const mediaRouter = require("./routes/media");
 
 const app = express();
@@ -22,6 +26,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 app.use(subdomain("api", mediaRouter));
 app.use(morgan("dev"));
 app.use(express.json());
+app.use(cookieParser());
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
@@ -42,22 +47,6 @@ app.use(
     },
   })
 );
-app.use((req, res, next) => {
-  if (req.files) {
-    const file = req.files.image;
-    if (
-      file.mimetype == "image/jpeg" ||
-      file.mimetype == "image/jpg" ||
-      file.mimetype == "image/png"
-    ) {
-      return next();
-    }
-    const err = new Error("Invalid File. PNG, JPG, JPEG are allowed strictly.");
-    err.httpStatusCode = 500;
-    return next(err);
-  }
-  next();
-});
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -85,6 +74,7 @@ app.post("/", (req, res, next) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/cart", cartRoutes);
 app.use("/cdn", mediaRouter);
 
 app.use((error, req, res, next) => {

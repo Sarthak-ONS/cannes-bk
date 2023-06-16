@@ -1,15 +1,14 @@
 const jwt = require("jsonwebtoken");
 
 module.exports = (req, res, next) => {
-  const authheader = req.get("Authorization");
+  const token =
+    req.cookies.token || req.header("Authorization").replace("Bearer ", "");
 
-  if (!authheader) {
-    const error = new Error("Not Authenticated");
+  if (!token) {
+    const error = new Error("Not Authenticated, Please Login");
     error.httpStatusCode = 401;
-    throw error;
+    return next(error);
   }
-
-  const token = req.get("Authorization").split(" ")[1];
 
   let decodedToken;
 
