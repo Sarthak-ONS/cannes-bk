@@ -8,7 +8,7 @@ exports.addtoCart = async (req, res, next) => {
     const cart = await Cart.findOne({ userId });
 
     if (!cart) {
-      await Cart.create({
+      const cart = await Cart.create({
         userId,
         items: [
           {
@@ -17,7 +17,7 @@ exports.addtoCart = async (req, res, next) => {
           },
         ],
       });
-
+      await cart.save();
       res.status(200).json({
         status: "SUCCESS",
         message: "Cart Created, Product is Added",
@@ -28,10 +28,6 @@ exports.addtoCart = async (req, res, next) => {
     let itemIndex = cart.items.findIndex(
       (p) => p.product.toString() === productId
     );
-
-    cart.items.forEach((p) => {
-      console.log(p.product.toString());
-    });
 
     if (itemIndex > -1) {
       console.log("ITEM IS ALREADY IN CART");
@@ -52,7 +48,47 @@ exports.addtoCart = async (req, res, next) => {
   }
 };
 
-exports.removeFromCart = async (req, res, next) => {};
+exports.removeFromCart = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const { productId } = req.body;
+
+    const cart = await Cart.findOne({ userId });
+
+    if (!cart) {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "Cart doesn't exists!" });
+    }
+
+    let itemIndex = cart.items.findIndex(
+      (p) => p.product.toString() === productId
+    );
+
+    if (itemIndex < 0) {
+      return res
+        .status(401)
+        .json({ status: "ERROR", message: "Item doesn't exists in Cart" });
+    }
+
+    let productItem = cart.items[itemIndex];
+
+    if (productItem.quantity > 1) {
+      productItem.quantity = productItem.quantity - 1;
+      cart.items[itemIndex] = productItem;
+    } else {
+      cart.items.splice(itemIndex, 1);
+    }
+    await cart.save();
+
+    res.status(200).json({ status: "SUCCESS", cart });
+  } catch (error) {
+    console.log(error);
+    const err = new Error("Unable to remove from Cart");
+    err.httpStatusCode = 401;
+    return next(err);
+  }
+};
 
 exports.updateCartItem = async (req, res, next) => {};
 
