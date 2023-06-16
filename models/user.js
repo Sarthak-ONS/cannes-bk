@@ -17,11 +17,14 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
-      required: true,
     },
     isVerified: {
       type: Boolean,
       default: false,
+    },
+    provider: {
+      type: String,
+      default: "email",
     },
     verificationToken: String,
     resetToken: String,
@@ -37,14 +40,6 @@ const userSchema = new Schema(
   },
   { timestamps: true }
 );
-
-userSchema.pre("save", async function (next) {
-  console.log("THIS IS METHOD BEFORE SAVING A VALUE");
-
-  const hashedPassword = await bcrypt.hash(this.password, 12);
-  this.password = hashedPassword;
-  return next();
-});
 
 userSchema.methods.getForgotPasswordToken = function () {
   const forgotToken = crypto.randomBytes(30).toString("hex");

@@ -3,15 +3,26 @@ const { check, body } = require("express-validator");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
+const User = require("../models/user");
+
 passport.use(
   new GoogleStrategy(
     {
-      callbackURL: "/auth/google/callback",
       clientID: process.env["GOOGLE_AUTH_CLIENT_ID"],
       clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET,
+      callbackURL: "/auth/google/callback",
     },
-    (accessToken, refreshToken, profile, done) => {
-      console.log(profile);
+    async (accessToken, refreshToken, profile, done) => {
+      const user = await User.findOne({ email: profile._json.email });
+      if (!user) {
+        await User.create({
+          name: `${profile.displayName}`,
+          email: profile._json.email,
+          isVerified: true,
+          provider: "google",
+        });
+      }
+
       done(null, profile);
     }
   )
@@ -73,13 +84,14 @@ router.get(
 
 router.get(
   "/google/callback",
-  passport.authenticate(
-    "google",
-
-    { failureRedirect: "/login", session: false, successMessage: true }
-  ),
+  passport.authenticate("google", {
+    failureRedirect: `${process.env.FRONTEND_SERVER_URL}/auth/login`,
+    session: false,
+    successMessage: true,
+  }),
   (req, res) => {
-    res.send("Success mil gayi");
+    console.log(req.user, "///////////// This is the prfile we get after success");
+    return res.redirect(`${process.env.FRONTEND_SERVER_URL}/`);
   }
 );
 

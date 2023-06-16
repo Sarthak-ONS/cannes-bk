@@ -8,6 +8,7 @@ const mongoose = require("mongoose");
 const morgan = require("morgan");
 const express = require("express");
 const subdomain = require("express-subdomain");
+// const helmet = require("helmet");
 
 const authRoutes = require("./routes/auth");
 const mediaRouter = require("./routes/media");
@@ -17,6 +18,7 @@ const app = express();
 const PORT = process.env.PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
 
+// app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(subdomain("api", mediaRouter));
 app.use(morgan("dev"));
 app.use(express.json());
@@ -73,6 +75,13 @@ app.use((req, res, next) => {
   }
 
   next();
+});
+
+app.post("/", (req, res, next) => {
+  const data = req.body;
+
+  console.log(data);
+  res.send(200).json({ message: "Data got" });
 });
 
 app.use("/auth", authRoutes);
