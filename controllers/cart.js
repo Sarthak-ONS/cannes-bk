@@ -92,6 +92,17 @@ exports.removeFromCart = async (req, res, next) => {
 
 exports.updateCartItem = async (req, res, next) => {};
 
-exports.clearCart = async (req, res, next) => {};
+exports.clearCart = async (req, res, next) => {
+  const userId = req.userId;
+
+  try {
+    await Cart.findOneAndDelete({ userId });
+    res.status(200).json({ status: "SUCCESS", message: "Cleared Cart" });
+  } catch (error) {
+    const err = new Error("Could not clear Cart");
+    err.httpStatusCode = 401;
+    return next(err);
+  }
+};
 
 exports.checkout = async (req, res, next) => {};

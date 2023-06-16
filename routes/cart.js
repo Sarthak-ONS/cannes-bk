@@ -12,6 +12,6 @@ router.delete("/remove", isAuth, cartController.removeFromCart);
 
 router.delete("/all", isAuth, cartController.clearCart);
 
-router.post("/all", isAuth, cartController.checkout);
+router.post("/checkout", isAuth, cartController.checkout);
 
 module.exports = router;
