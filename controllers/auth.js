@@ -1,13 +1,11 @@
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const jwt = require("jsonwebtoken");
-const cloudinary = require("cloudinary");
-const nodemailer = require("nodemailer");
 
 const { validationResult } = require("express-validator");
 
 const User = require("../models/user");
 const { sendMail } = require("../utils/email-util");
+const { cookieToken } = require("../utils/cookit-Token");
 
 exports.signup = async (req, res, next) => {
   try {
@@ -124,9 +122,7 @@ exports.login = async (req, res, next) => {
       return next(error);
     }
 
-    
-
-    const doMatch = await bcrypt.compare(password, user.password);
+    const doMatch = bcrypt.compare(password, user.password);
 
     if (!doMatch) {
       const error = new Error("Invalid Credentials");
@@ -134,14 +130,6 @@ exports.login = async (req, res, next) => {
       error.httpStatusCode = 401;
       return next(error);
     }
-
-    const token = jwt.sign(
-      { email: user.email, userId: user._id.toString() },
-      process.env.JWT_KEY,
-      {
-        expiresIn: "1h",
-      }
-    );
 
     const options = {
       email: email,
@@ -153,7 +141,7 @@ exports.login = async (req, res, next) => {
 
     await sendMail(options);
 
-    return res.status(200).json({ token, userId: user._id.toString() });
+    cookieToken(user, res);
   } catch (err) {
     const error = new Error(err);
     error.httpStatusCode = 500;
@@ -253,6 +241,13 @@ exports.passwordReset = async (req, res, next) => {
     err.httpStatusCode = 500;
     return next(err);
   }
+};
+
+exports.logout = async (req, res, next) => {
+  res.cookie("token", null, {
+    expires: new Date(Date.now()),
+  });
+  res.status(200).json({ status: "SUCCESS", message: "Logout Success!" });
 };
 
 function generateVerificationToken() {

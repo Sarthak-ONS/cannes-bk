@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const mongoose = require("mongoose");
 
@@ -51,6 +51,16 @@ userSchema.methods.getForgotPasswordToken = function () {
   this.resetTokenExpiration = Date.now() + 20 * 60 * 1000;
 
   return forgotToken;
+};
+
+userSchema.methods.getJwtToken = function () {
+  return jwt.sign(
+    { email: this.email, userId: this._id },
+    process.env.JWT_KEY,
+    {
+      expiresIn: "1h",
+    }
+  );
 };
 
 module.exports = mongoose.model("User", userSchema);

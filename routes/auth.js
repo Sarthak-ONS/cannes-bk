@@ -4,6 +4,8 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const cookie = require("cookie");
 
+const jwt = require("jsonwebtoken");
+
 const User = require("../models/user");
 
 passport.use(
@@ -48,6 +50,9 @@ router.post(
   authController.login
 );
 
+// GET LOGOUT
+router.get("/logout", authController.logout);
+
 // POST Signup Routes
 router.post(
   "/signup",
@@ -91,19 +96,22 @@ router.get(
     successMessage: true,
   }),
   (req, res) => {
-    console.log(
-      req.user,
-      "///////////// This is the prfile we get after success"
+    const token = jwt.sign(
+      { email: req.user._json.email },
+      process.env.JWT_KEY,
+      {
+        expiresIn: "1h",
+      }
     );
-    // Set the token as a cookie in the response
+
     res.setHeader(
       "Set-Cookie",
-      cookie.serialize("token", "This is a dummy token", {
-        httpOnly: true, // Ensures the cookie is only accessible via HTTP(S)
-        secure: process.env.NODE_ENV === "production", // Requires HTTPS in production environment
-        sameSite: "strict", // Restricts the cookie to be sent only on same-site requests
-        path: "/", // Specifies the root path where the cookie is valid
-        expires: new Date(Date.now() + 3600000), // Sets the expiration time of the cookie (1 hour in this example)
+      cookie.serialize("token", token, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        expires: new Date(Date.now() + 3600000),
       })
     );
     return res.redirect(`${process.env.FRONTEND_SERVER_URL}/`);
