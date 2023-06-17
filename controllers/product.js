@@ -1,6 +1,17 @@
 const cloudinary = require("cloudinary");
 const Product = require("../models/product");
 
+const categories = [
+  "Electronics",
+  "Clothing",
+  "Sports",
+  "Health",
+  "Appliances",
+  "Furniture",
+  "Watches",
+  "Games",
+];
+
 exports.addProduct = async (req, res, next) => {
   const { name, price, description, category, brand } = req.body;
 
@@ -37,9 +48,11 @@ exports.addProduct = async (req, res, next) => {
 
 exports.getProducts = async (req, res, next) => {
   try {
-    const products = Product.find();
+    const products = await Product.find({}).select(
+      "-createdAt -updatedAt -ratings -reviews"
+    );
 
-    res.status(200).json({ status: "SUCCESS", products });
+    res.status(200).json({ status: "SUCCESS", products, categories });
   } catch (error) {
     console.log(error);
     const err = new Error("Could not fetch Products");

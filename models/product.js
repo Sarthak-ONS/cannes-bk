@@ -14,6 +14,10 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    isOnSale: {
+      type: Boolean,
+      default: false,
+    },
     category: {
       type: String,
       required: true,
