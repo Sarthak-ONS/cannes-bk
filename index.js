@@ -13,6 +13,7 @@ const cookieParser = require("cookie-parser");
 // const helmet = require("helmet");
 
 const authRoutes = require("./routes/auth");
+const productRoutes = require("./routes/products");
 const cartRoutes = require("./routes/cart");
 
 const mediaRouter = require("./routes/media");
@@ -74,6 +75,7 @@ app.post("/", (req, res, next) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/product", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/cdn", mediaRouter);
 
