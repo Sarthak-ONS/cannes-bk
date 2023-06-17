@@ -1,4 +1,5 @@
 const Cart = require("../models/cart");
+const logger = require("../utils/logger");
 
 exports.addtoCart = async (req, res, next) => {
   try {
@@ -38,6 +39,8 @@ exports.addtoCart = async (req, res, next) => {
       cart.items.push({ product: productId, quantity: 1 });
     }
     await cart.save();
+
+    logger.info(`PRODUCT ADDED TO CARD`, { userId });
 
     res.status(200).json({ status: "SUCCESS", cart });
   } catch (error) {
