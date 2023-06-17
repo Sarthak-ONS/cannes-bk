@@ -22,6 +22,10 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    role: {
+      type: String,
+      default: "USER",
+    },
     provider: {
       type: String,
       default: "email",
