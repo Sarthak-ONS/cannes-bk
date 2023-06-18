@@ -2,14 +2,15 @@ const cloudinary = require("cloudinary");
 const Product = require("../models/product");
 
 const categories = [
-  "Electronics",
-  "Clothing",
-  "Sports",
-  "Health",
-  "Appliances",
-  "Furniture",
-  "Watches",
-  "Games",
+  { id: 1, name: "Electronics" },
+  { id: 2, name: "Clothing" },
+  { id: 3, name: "Sports" },
+  { id: 4, name: "Health" },
+  { id: 5, name: "Appliances" },
+  { id: 6, name: "Furniture" },
+  { id: 7, name: "Watches" },
+  { id: 8, name: "Games" },
+  { id: 9, name: "Sarthak" },
 ];
 
 exports.addProduct = async (req, res, next) => {

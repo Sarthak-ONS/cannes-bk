@@ -9,6 +9,7 @@ const morgan = require("morgan");
 const express = require("express");
 const subdomain = require("express-subdomain");
 const cookieParser = require("cookie-parser");
+const cors = require("cors");
 
 // const helmet = require("helmet");
 
@@ -31,6 +32,7 @@ app.use(cookieParser());
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+app.use(cors({ credentials: true, origin : process.env.FRONTEND_SERVER_URL }));
 
 app.use(
   fileUpload({
@@ -80,7 +82,6 @@ app.use("/cart", cartRoutes);
 app.use("/cdn", mediaRouter);
 
 app.use((error, req, res, next) => {
-  console.log(error);
   return res.status(error.httpStatusCode || 500).json({
     status: "ERROR",
     errorMessage: error.message,

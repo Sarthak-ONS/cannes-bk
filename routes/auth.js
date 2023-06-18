@@ -17,16 +17,23 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       const user = await User.findOne({ email: profile._json.email });
+      let newUser;
       if (!user) {
-        await User.create({
+        newUser = await User.create({
           name: `${profile.displayName}`,
           email: profile._json.email,
           isVerified: true,
           provider: "google",
         });
       }
+      const userId = user ? user._id : newUser._id;
 
-      done(null, profile);
+      const modifiedProfile = {
+        ...profile,
+        userId,
+      };
+
+      done(null, modifiedProfile);
     }
   )
 );
@@ -96,8 +103,9 @@ router.get(
     successMessage: true,
   }),
   (req, res) => {
+    console.log(req.user.userId.toString());
     const token = jwt.sign(
-      { email: req.user._json.email },
+      { userId: req.user.userId.toString() },
       process.env.JWT_KEY,
       {
         expiresIn: "1h",

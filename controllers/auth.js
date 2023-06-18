@@ -6,6 +6,7 @@ const { validationResult } = require("express-validator");
 const User = require("../models/user");
 const { sendMail } = require("../utils/email-util");
 const { cookieToken } = require("../utils/cookit-Token");
+const cookie = require("cookie");
 
 exports.signup = async (req, res, next) => {
   try {
@@ -122,27 +123,28 @@ exports.login = async (req, res, next) => {
       return next(error);
     }
 
-    const doMatch = bcrypt.compare(password, user.password);
-
+    console.log(password, "///// ", user.password, " ///////////");
+    const doMatch = await bcrypt.compare(password, user.password);
     if (!doMatch) {
       const error = new Error("Invalid Credentials");
       error.message = "Incorrect Password";
       error.httpStatusCode = 401;
       return next(error);
     }
-
-    const options = {
-      email: email,
-      subject: "LoggedIn Successfully",
-      html: `
-      Dear ${user.name}, You have logged in successfully!
-      `,
-    };
-
-    await sendMail(options);
-
-    cookieToken(user, res);
+    const token = await user.getJwtToken();
+    res.setHeader(
+      "Set-Cookie",
+      cookie.serialize("token", token, {
+        httpOnly: false,
+        path: "/",
+        expires: new Date(Date.now() + 3600000),
+      })
+    );
+    return res
+      .status(200)
+      .json({ status: "SUCCESS", message: "Logged in Successfully!" });
   } catch (err) {
+    console.log(err);
     const error = new Error(err);
     error.httpStatusCode = 500;
     next(err);

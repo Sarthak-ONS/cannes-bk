@@ -1,8 +1,13 @@
 const jwt = require("jsonwebtoken");
 
 module.exports = (req, res, next) => {
+
+  console.log(req.cookies);
+
   const token =
-    req.cookies.token || req.header("Authorization").replace("Bearer ", "");
+    req.cookies.token ||
+    (req.header("Authorization") &&
+      req.header("Authorization").replace("Bearer ", ""));
 
   if (!token) {
     const error = new Error("Not Authenticated, Please Login");

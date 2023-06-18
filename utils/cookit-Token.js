@@ -1,17 +1,21 @@
-exports.cookieToken = async (user, res) => {
+const cookie = require("cookie");
+
+exports.cookieToken = async (user, res, next) => {
   try {
     const token = await user.getJwtToken();
-
-    const options = {
-      expires: new Date(Date.now() + 1 * 60 * 60 * 1000),
-      //   secure: true,
-    };
-    return res.status(200).cookie("token", token, options).json({
-      status: "SUCCESS",
-    });
+    res.setHeader(
+      "Set-Cookie",
+      cookie.serialize("token", token, {
+        httpOnly: false,
+        path: "/",
+        expires: new Date(Date.now() + 3600000),
+      })
+    );
+    return res.redirect(`${process.env.FRONTEND_SERVER_URL}/`);
   } catch (error) {
+    console.log(error);
     const err = new Error("Could not generate Cookie Token");
     err.httpStatusCode = 500;
-    return next(error);
+    next(err);
   }
 };
