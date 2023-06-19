@@ -122,9 +122,7 @@ router.get(
         expires: new Date(Date.now() + 3600000),
       })
     );
-    return res
-      .status(200)
-      .json({ status: "SUCCESS", token, message: "Logged in Successfully!" });
+    return res.redirect(`${process.env.FRONTEND_SERVER_URL}/`);
   }
 );
 

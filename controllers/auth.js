@@ -135,7 +135,14 @@ exports.login = async (req, res, next) => {
       return next(error);
     }
 
-    console.log(password, "///// ", user.password, " ///////////");
+    if (!user.password) {
+      const err = new Error(
+        "You might have used social logins, No password Set"
+      );
+      err.httpStatusCode = 401;
+      return next(err);
+    }
+
     const doMatch = await bcrypt.compare(password, user.password);
     if (!doMatch) {
       const error = new Error("Invalid Credentials");

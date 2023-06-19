@@ -3,6 +3,32 @@ const logger = require("../utils/logger");
 
 const { validationResult } = require("express-validator");
 
+exports.getUserCart = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+
+    const cart = await Cart.findOne({ userId })
+      .populate({
+        path: "items.product",
+        select: "imageUrls name _id",
+      })
+      .exec();
+
+    if (!cart) {
+      return res
+        .status(200)
+        .json({ status: "SUCCESS", message: "Cart is Empty" });
+    }
+
+    return res.status(200).json({ status: "SUCCESS", cart });
+  } catch (error) {
+    console.log(error);
+    const err = new Error("Could not fetch Cart");
+    err.httpStatusCode = 500;
+    return next(err);
+  }
+};
+
 exports.addtoCart = async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -15,6 +41,14 @@ exports.addtoCart = async (req, res, next) => {
 
     const userId = req.userId;
     const { productId } = req.body;
+
+    console.log(productId, "This is the productId Clicked");
+    if (!productId) {
+      return res
+        .status(200)
+        .json({ status: "ERROR", message: "Invalid Product Id" });
+    }
+
     const cart = await Cart.findOne({ userId });
 
     if (!cart) {

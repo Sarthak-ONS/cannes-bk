@@ -5,6 +5,8 @@ const { check, body } = require("express-validator");
 
 const router = express.Router();
 
+router.get("/", isAuth, cartController.getUserCart);
+
 // POST Add to Cart
 router.post(
   "/add",
@@ -19,6 +21,7 @@ router.delete("/remove", isAuth, cartController.removeFromCart);
 // DELETE Clear the Cart
 router.delete("/all", isAuth, cartController.clearCart);
 
+// POST Checkout Cart
 router.post("/checkout", isAuth, cartController.checkout);
 
 module.exports = router;
