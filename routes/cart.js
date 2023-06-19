@@ -9,7 +9,7 @@ const router = express.Router();
 router.post(
   "/add",
   isAuth,
-  //   body("productId").trim().isLength({ min: 5 }),
+  body("productId").trim().isLength({ min: 5 }),
   cartController.addtoCart
 );
 

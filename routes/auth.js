@@ -43,6 +43,7 @@ const router = express.Router();
 router.use(passport.initialize());
 
 const authController = require("../controllers/auth");
+const isAuth = require("../middlewares/isAuth");
 
 // POST Login Routes
 router.post(
@@ -103,7 +104,6 @@ router.get(
     successMessage: true,
   }),
   (req, res) => {
-    console.log(req.user.userId.toString());
     const token = jwt.sign(
       { userId: req.user.userId.toString() },
       process.env.JWT_KEY,
@@ -122,10 +122,15 @@ router.get(
         expires: new Date(Date.now() + 3600000),
       })
     );
-    return res.redirect(`${process.env.FRONTEND_SERVER_URL}/`);
+    return res
+      .status(200)
+      .json({ status: "SUCCESS", token, message: "Logged in Successfully!" });
   }
 );
 
 // Google Auth Ends
+
+// GET Get user profile
+router.get("/user", isAuth, authController.fetchProfile);
 
 module.exports = router;

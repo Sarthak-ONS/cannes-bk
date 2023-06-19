@@ -32,7 +32,14 @@ app.use(cookieParser());
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
-app.use(cors({ credentials: true, origin : process.env.FRONTEND_SERVER_URL }));
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST", "DELETE", "OPTIONS", "PUT", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
 app.use(
   fileUpload({
@@ -55,25 +62,6 @@ cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "*");
-  res.setHeader("Access-Control-Allow-Headers", "*");
-
-  if (req.method == "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
-});
-
-app.post("/", (req, res, next) => {
-  const data = req.body;
-
-  console.log(data);
-  res.send(200).json({ message: "Data got" });
 });
 
 app.use("/auth", authRoutes);

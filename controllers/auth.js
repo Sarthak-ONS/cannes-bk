@@ -8,6 +8,18 @@ const { sendMail } = require("../utils/email-util");
 const { cookieToken } = require("../utils/cookit-Token");
 const cookie = require("cookie");
 
+exports.fetchProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId, "name email");
+    return res.status(200).json({ status: "SUCCESS", user });
+  } catch (error) {
+    console.log(error);
+    const err = new Error("Could not fetch Profile");
+    err.httpStatusCode = 500;
+    return next(err);
+  }
+};
+
 exports.signup = async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -140,9 +152,10 @@ exports.login = async (req, res, next) => {
         expires: new Date(Date.now() + 3600000),
       })
     );
+
     return res
       .status(200)
-      .json({ status: "SUCCESS", message: "Logged in Successfully!" });
+      .json({ status: "SUCCESS", token, message: "Logged in Successfully!" });
   } catch (err) {
     console.log(err);
     const error = new Error(err);
@@ -246,10 +259,8 @@ exports.passwordReset = async (req, res, next) => {
 };
 
 exports.logout = async (req, res, next) => {
-  res.cookie("token", null, {
-    expires: new Date(Date.now()),
-  });
-  res.status(200).json({ status: "SUCCESS", message: "Logout Success!" });
+  res.clearCookie("token", { path: "/" });
+  return res.redirect(`${process.env.FRONTEND_SERVER_URL}/`);
 };
 
 function generateVerificationToken() {

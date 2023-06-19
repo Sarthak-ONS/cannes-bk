@@ -5,60 +5,53 @@ const { validationResult } = require("express-validator");
 
 exports.addtoCart = async (req, res, next) => {
   try {
-    // const errors = validationResult(req);
+    const errors = validationResult(req);
 
-    // if (!errors.isEmpty()) {
-    //   const err = new Error(errors.array()[0].msg);
-    //   err.httpStatusCode = 422;
-    //   return next(err);
-    // }
+    if (!errors.isEmpty()) {
+      const err = new Error(errors.array()[0].msg);
+      err.httpStatusCode = 422;
+      return next(err);
+    }
 
     const userId = req.userId;
     const { productId } = req.body;
+    const cart = await Cart.findOne({ userId });
 
-    console.log(
-      productId,
-      "This is the product Id bete the saww from user ",
-      userId
+    if (!cart) {
+      const cart = await Cart.create({
+        userId,
+        items: [
+          {
+            product: productId,
+            quantity: 1,
+          },
+        ],
+      });
+      await cart.save();
+      res.status(200).json({
+        status: "SUCCESS",
+        message: "Cart Created, Product is Added",
+        cart,
+      });
+    }
+
+    let itemIndex = cart.items.findIndex(
+      (p) => p.product.toString() === productId
     );
 
-    // const cart = await Cart.findOne({ userId });
+    if (itemIndex > -1) {
+      console.log("ITEM IS ALREADY IN CART");
+      let productItem = cart.items[itemIndex];
+      productItem.quantity = productItem.quantity + 1;
+      cart.items[itemIndex] = productItem;
+    } else {
+      cart.items.push({ product: productId, quantity: 1 });
+    }
+    await cart.save();
 
-    // if (!cart) {
-    //   const cart = await Cart.create({
-    //     userId,
-    //     items: [
-    //       {
-    //         product: productId,
-    //         quantity: 1,
-    //       },
-    //     ],
-    //   });
-    //   await cart.save();
-    //   res.status(200).json({
-    //     status: "SUCCESS",
-    //     message: "Cart Created, Product is Added",
-    //     cart,
-    //   });
-    // }
+    logger.info(`PRODUCT ADDED TO CARD`, { userId });
 
-    // let itemIndex = cart.items.findIndex(
-    //   (p) => p.product.toString() === productId
-    // );
-
-    // if (itemIndex > -1) {
-    //   console.log("ITEM IS ALREADY IN CART");
-    //   let productItem = cart.items[itemIndex];
-    //   productItem.quantity = productItem.quantity + 1;
-    //   cart.items[itemIndex] = productItem;
-    // } else {
-    //   cart.items.push({ product: productId, quantity: 1 });
-    // }
-    // await cart.save();
-
-    // logger.info(`PRODUCT ADDED TO CARD`, { userId });
-
-    return res.status(200).json({ status: "SUCCESS", cart: {} });
+    return res.status(200).json({ status: "SUCCESS", cart });
   } catch (error) {
     console.log(error);
     const err = new Error("Unable to add to Cart");
