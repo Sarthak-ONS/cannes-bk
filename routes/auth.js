@@ -1,5 +1,5 @@
 const express = require("express");
-const { check, body } = require("express-validator");
+const { body } = require("express-validator");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const cookie = require("cookie");

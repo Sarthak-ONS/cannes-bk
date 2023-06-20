@@ -1,6 +1,8 @@
 const cloudinary = require("cloudinary");
 const Product = require("../models/product");
 
+const { validationResult } = require("express-validator");
+
 const categories = [
   { id: 1, name: "Electronics" },
   { id: 2, name: "Clothing" },
@@ -83,6 +85,15 @@ exports.getSingleProduct = async (req, res, next) => {
 
 exports.postAddReview = async (req, res, next) => {
   try {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      console.log(errors.array()[0]);
+      const err = new Error(errors.array()[0].msg);
+      err.httpStatusCode = 422;
+      return next(err);
+    }
+
     const { text } = req.body;
     const { productId } = req.params;
 
@@ -157,16 +168,55 @@ exports.deleteReview = async (req, res, next) => {
 
     product.reviews.splice(isAlreadyReviewdByUser, 1);
     await product.save();
-    res
-      .status(200)
-      .json({
-        status: "SUCCESS",
-        message: "Deleted Product Review Successfully!",
-      });
+    res.status(200).json({
+      status: "SUCCESS",
+      message: "Deleted Product Review Successfully!",
+    });
   } catch (error) {
     console.log(error);
 
-    const err = new Error("Could not post Review.");
+    const err = new Error("Could not delete Review.");
+    err.httpStatusCode = 500;
+    return next(err);
+  }
+};
+
+exports.updateReview = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+    const { text } = req.body;
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res
+        .status(404)
+        .json({ status: "ERROR", message: "No Product found" });
+    }
+    if (!product.reviews) {
+      product.reviews = [];
+    }
+
+    const review = product.reviews.find(
+      (review) => review.userId.toString() === req.userId
+    );
+
+    if (!review) {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "No review found!" });
+    }
+
+    review.text = text;
+
+    await product.save();
+
+    res
+      .status(200)
+      .json({ status: "SUCCESS", message: "Updated Review Successfully!" });
+  } catch (error) {
+    console.log(error);
+    const err = new Error("Could not update Review.");
     err.httpStatusCode = 500;
     return next(err);
   }
