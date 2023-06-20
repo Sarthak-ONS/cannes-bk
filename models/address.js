@@ -18,9 +18,9 @@ const addressSchema = new mongoose.Schema({
     required: true,
   },
   postalCode: {
-    type: String,
+    type: Number,
     required: true,
   },
 });
 
-module.exports = mongoose.model(addressSchema, "Address");
+module.exports = mongoose.model("Address", addressSchema);

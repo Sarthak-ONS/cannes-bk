@@ -14,6 +14,7 @@ const cors = require("cors");
 // const helmet = require("helmet");
 
 const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/user");
 const productRoutes = require("./routes/products");
 const cartRoutes = require("./routes/cart");
 
@@ -65,6 +66,7 @@ cloudinary.config({
 });
 
 app.use("/auth", authRoutes);
+app.use("/user", userRoutes);
 app.use("/product", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/cdn", mediaRouter);
