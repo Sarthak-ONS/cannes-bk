@@ -6,6 +6,12 @@ const isAuth = require("../middlewares/isAuth");
 
 router.get("/", productController.getProducts);
 
+router.get("/:productId", productController.getSingleProduct);
+
+router.post("/:productId/review", isAuth, productController.postAddReview);
+
+router.delete("/:productId/review", isAuth, productController.deleteReview);
+
 router.post(
   "/add",
   [isAuth, customRole("Admin")],

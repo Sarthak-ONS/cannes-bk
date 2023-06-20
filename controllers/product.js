@@ -10,7 +10,6 @@ const categories = [
   { id: 6, name: "Furniture" },
   { id: 7, name: "Watches" },
   { id: 8, name: "Games" },
-  { id: 9, name: "Sarthak" },
 ];
 
 exports.addProduct = async (req, res, next) => {
@@ -58,6 +57,117 @@ exports.getProducts = async (req, res, next) => {
     console.log(error);
     const err = new Error("Could not fetch Products");
     err.httpStatusCode = 400;
+    return next(err);
+  }
+};
+
+exports.getSingleProduct = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      const err = new Error("Product not found");
+      err.httpStatusCode = 404;
+      return next(err);
+    }
+
+    return res.status(200).json({ status: "SUCCESS", product });
+  } catch (error) {
+    const err = new Error("Could not fetch Product Details");
+    err.httpStatusCode = 500;
+    return next(err);
+  }
+};
+
+exports.postAddReview = async (req, res, next) => {
+  try {
+    const { text } = req.body;
+    const { productId } = req.params;
+
+    console.log(productId);
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res
+        .status(404)
+        .json({ status: "ERROR", message: "No Product found" });
+    }
+    if (!product.reviews) {
+      product.reviews = [];
+    }
+
+    const isAlreadyReviewdByUser = product.reviews.find(
+      (item) => item.userId.toString() === req.userId
+    );
+
+    if (isAlreadyReviewdByUser) {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "User already added a review" });
+    }
+
+    let newReview = {
+      userId: req.userId,
+      text,
+    };
+
+    product.reviews.push(newReview);
+
+    await product.save();
+
+    res
+      .status(200)
+      .json({ status: "SUCCESS", message: "Product Reviews Successfully!" });
+  } catch (error) {
+    console.log(error);
+
+    const err = new Error("Could not post Review.");
+    err.httpStatusCode = 500;
+    return next(err);
+  }
+};
+
+exports.deleteReview = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res
+        .status(404)
+        .json({ status: "ERROR", message: "No Product found" });
+    }
+    if (!product.reviews) {
+      product.reviews = [];
+    }
+
+    const isAlreadyReviewdByUser = product.reviews.find(
+      (item) => item.userId.toString() === req.userId
+    );
+
+    if (!isAlreadyReviewdByUser) {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "Product was not reviewed by user" });
+    }
+
+    product.reviews.splice(isAlreadyReviewdByUser, 1);
+    await product.save();
+    res
+      .status(200)
+      .json({
+        status: "SUCCESS",
+        message: "Deleted Product Review Successfully!",
+      });
+  } catch (error) {
+    console.log(error);
+
+    const err = new Error("Could not post Review.");
+    err.httpStatusCode = 500;
     return next(err);
   }
 };

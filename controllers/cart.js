@@ -10,7 +10,7 @@ exports.getUserCart = async (req, res, next) => {
     const cart = await Cart.findOne({ userId })
       .populate({
         path: "items.product",
-        select: "imageUrls name _id",
+        select: "imageUrls name _id price",
       })
       .exec();
 
