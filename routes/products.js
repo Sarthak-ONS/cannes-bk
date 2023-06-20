@@ -29,7 +29,17 @@ router.patch(
 // Review Routes ends
 
 // Rating Routes Starts
-// router.post();
+router.post(
+  "/:productId/rating",
+  isAuth,
+  body("rating", "Invalid rating value").isInt(),
+  productController.addProductRating
+);
+router.delete(
+  "/:productId/rating",
+  isAuth,
+  productController.deleteProductRating
+);
 
 // Rating Routes Ends
 
