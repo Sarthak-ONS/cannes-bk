@@ -3,7 +3,7 @@ const Address = require("../models/address");
 
 exports.fetchUserProfile = async (req, res, next) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.userId).populate('address').exec();
 
     if (!user) {
       const err = new Error("User not found");
@@ -69,6 +69,8 @@ exports.updateAddress = async (req, res, next) => {
   try {
     const { street, city, state, country, postalCode } = req.body;
 
+    console.log(req.body);
+
     if (!street || !city || !state || !country || !postalCode) {
       return res
         .status(400)
@@ -87,7 +89,7 @@ exports.updateAddress = async (req, res, next) => {
 
     if (!address) {
       return res
-        .status(400)
+        .status(401)
         .json({ status: "ERROR", message: "No Address to update!" });
     }
 

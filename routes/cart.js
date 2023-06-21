@@ -21,6 +21,9 @@ router.delete("/remove", isAuth, cartController.removeFromCart);
 // DELETE Clear the Cart
 router.delete("/all", isAuth, cartController.clearCart);
 
+// POST applyDiscount
+router.post("/applyDiscount", isAuth, cartController.applyDiscountOnCart);
+
 // POST Checkout Cart
 router.post("/checkout", isAuth, cartController.checkout);
 

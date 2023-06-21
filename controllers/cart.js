@@ -1,4 +1,5 @@
 const Cart = require("../models/cart");
+const Product = require("../models/product");
 const logger = require("../utils/logger");
 
 const { validationResult } = require("express-validator");
@@ -19,6 +20,9 @@ exports.getUserCart = async (req, res, next) => {
         .status(200)
         .json({ status: "SUCCESS", message: "Cart is Empty" });
     }
+
+    const totalPrice = cart.calculateTotalPrice(cart.couponCode);
+    await cart.save();
 
     return res.status(200).json({ status: "SUCCESS", cart });
   } catch (error) {
@@ -42,11 +46,15 @@ exports.addtoCart = async (req, res, next) => {
     const userId = req.userId;
     const { productId } = req.body;
 
-    console.log(productId, "This is the productId Clicked");
     if (!productId) {
       return res
         .status(200)
         .json({ status: "ERROR", message: "Invalid Product Id" });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      res.status(400).json({ status: "ERRROR", message: "Product not found" });
     }
 
     const cart = await Cart.findOne({ userId });
@@ -89,7 +97,7 @@ exports.addtoCart = async (req, res, next) => {
   } catch (error) {
     console.log(error);
     const err = new Error("Unable to add to Cart");
-    err.httpStatusCode = 401;
+    err.httpStatusCode = 500;
     return next(err);
   }
 };
@@ -125,13 +133,14 @@ exports.removeFromCart = async (req, res, next) => {
     } else {
       cart.items.splice(itemIndex, 1);
     }
+
     await cart.save();
 
     res.status(200).json({ status: "SUCCESS", cart });
   } catch (error) {
     console.log(error);
     const err = new Error("Unable to remove from Cart");
-    err.httpStatusCode = 401;
+    err.httpStatusCode = 500;
     return next(err);
   }
 };
@@ -148,6 +157,39 @@ exports.clearCart = async (req, res, next) => {
     const err = new Error("Could not clear Cart");
     err.httpStatusCode = 401;
     return next(err);
+  }
+};
+
+exports.applyDiscountOnCart = async (req, res, next) => {
+  try {
+    const { couponCode } = req.body;
+
+    console.log(couponCode, " COUPON CODE IN BODY");
+
+    const cart = await Cart.findOne({ userId: req.userId })
+      .populate({
+        path: "items.product",
+        select: "imageUrls name _id price",
+      })
+      .exec();
+
+    if (!cart) {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "Cart not found" });
+    }
+    cart.calculateTotalPrice(couponCode);
+    await cart.save();
+    res.status(200).json({
+      status: "SUCCESS",
+      message: "Applied Discount",
+      cart,
+    });
+  } catch (error) {
+    console.log(error);
+    const err = new Error("Could not apply discount");
+    err.httpStatusCode = 500;
+    next(err);
   }
 };
 
