@@ -72,9 +72,11 @@ exports.addProduct = async (req, res, next) => {
 
 exports.getProducts = async (req, res, next) => {
   try {
-    const products = await Product.find({}).select(
-      "-createdAt -updatedAt -ratings -reviews"
-    );
+    const { q } = req.query;
+    const regex = new RegExp(q, "i");
+    const products = await Product.find({
+      $or: [{ name: regex }, { description: regex }],
+    }).select("-createdAt -updatedAt -ratings -reviews");
 
     res.status(200).json({ status: "SUCCESS", products, categories });
   } catch (error) {
