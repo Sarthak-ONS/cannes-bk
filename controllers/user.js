@@ -1,9 +1,10 @@
 const User = require("../models/user");
+const Order = require("../models/order");
 const Address = require("../models/address");
 
 exports.fetchUserProfile = async (req, res, next) => {
   try {
-    const user = await User.findById(req.userId).populate('address').exec();
+    const user = await User.findById(req.userId).populate("address").exec();
 
     if (!user) {
       const err = new Error("User not found");
@@ -107,6 +108,24 @@ exports.updateAddress = async (req, res, next) => {
     });
   } catch (error) {
     const err = new Error("Could not update Address");
+    err.httpStatusCode = 500;
+    return next(err);
+  }
+};
+
+exports.getOrders = async (req, res, next) => {
+  try {
+    const orders = await Order.find({ user: req.userId })
+      .populate("products.product", "name price")
+      .populate("shippingAddress", "street city")
+      .exec();
+
+    res
+      .status(200)
+      .json({ status: "SUCCESS", message: "Orders are sent", orders });
+  } catch (error) {
+    console.log(error);
+    const err = new Error("Could not get Orders!");
     err.httpStatusCode = 500;
     return next(err);
   }

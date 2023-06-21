@@ -1,5 +1,8 @@
 const Cart = require("../models/cart");
+const User = require("../models/user");
+const Order = require("../models/order");
 const Product = require("../models/product");
+
 const logger = require("../utils/logger");
 
 const { validationResult } = require("express-validator");
@@ -193,4 +196,51 @@ exports.applyDiscountOnCart = async (req, res, next) => {
   }
 };
 
-exports.checkout = async (req, res, next) => {};
+exports.checkout = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+
+    const cart = await Cart.findOne({ userId });
+
+    if (!cart) {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "No cart found" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user.isVerified) {
+      res.status(401).json({ status: "ERROR", message: "User not verified" });
+    }
+
+    if (!user.address) {
+      res
+        .status(400)
+        .json({ status: "ERROR", message: "Please add a address" });
+    }
+
+    console.log(cart);
+
+    const order = await Order.create({
+      user: userId,
+      products: cart.items,
+      shippingAddress: user.address,
+      totalAmount: cart.totalPrice,
+    });
+
+    await Cart.findOneAndDelete({ userId });
+
+    await user.save();
+    await order.save();
+
+    res
+      .status(200)
+      .json({ status: "SUCCESS", message: "Cart executed successfully!" });
+  } catch (error) {
+    console.log(error);
+    const err = new Error("Could not place order!");
+    err.httpStatusCode = 500;
+    next(err);
+  }
+};

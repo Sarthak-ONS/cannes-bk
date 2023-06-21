@@ -25,6 +25,6 @@ router.delete("/all", isAuth, cartController.clearCart);
 router.post("/applyDiscount", isAuth, cartController.applyDiscountOnCart);
 
 // POST Checkout Cart
-router.post("/checkout", isAuth, cartController.checkout);
+router.get("/checkout", isAuth, cartController.checkout);
 
 module.exports = router;

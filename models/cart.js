@@ -20,9 +20,9 @@ const cartSchema = new Schema({
       },
     },
   ],
-  discount: {
-    type: Number,
-    default: 0,
+  isdiscount: {
+    type: Boolean,
+    default: false,
   },
   couponCode: {
     type: String,
@@ -43,8 +43,7 @@ cartSchema.methods.calculateTotalPrice = function (couponCode) {
   }, 0);
 
   let deliveryCharge = 150;
-  let discountedPrice =
-    totalItemsPrice - (totalItemsPrice * this.discount) / 100 + deliveryCharge;
+  let discountedPrice = totalItemsPrice + deliveryCharge;
 
   if (couponCode === "FLAT50") {
     discountedPrice = discountedPrice - discountedPrice / 2;

@@ -9,4 +9,6 @@ router.post("/address", isAuth, userController.addAddress);
 
 router.put("/address", isAuth, userController.updateAddress);
 
+router.get("/orders", isAuth, userController.getOrders);
+
 module.exports = router;
