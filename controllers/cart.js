@@ -4,6 +4,9 @@ const Order = require("../models/order");
 const Product = require("../models/product");
 
 const logger = require("../utils/logger");
+const jwt = require("jsonwebtoken");
+
+const stripe = require("stripe")(process.env.STRIPE_API_KEY);
 
 const { validationResult } = require("express-validator");
 
@@ -200,7 +203,94 @@ exports.checkout = async (req, res, next) => {
   try {
     const userId = req.userId;
 
-    const cart = await Cart.findOne({ userId });
+    const cart = await Cart.findOne({ userId })
+      .populate("items.product", "price name")
+      .exec();
+
+    if (!cart) {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "No cart found" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user.isVerified) {
+      res.status(401).json({ status: "ERROR", message: "User not verified" });
+    }
+
+    if (!user.address) {
+      res
+        .status(400)
+        .json({ status: "ERROR", message: "Please add a address" });
+    }
+
+    const token = user.getJwtToken();
+
+    await stripe.checkout.sessions
+      .create({
+        customer_email: user.email,
+        payment_method_types: ["card"],
+        mode: "payment",
+        success_url: process.env.FRONTEND_SERVER_URL + "/orders",
+        cancel_url: process.env.FRONTEND_SERVER_URL + "/cart",
+        line_items: cart.items.map((p) => {
+          return {
+            price_data: {
+              currency: "INR",
+              product_data: {
+                name: p.product.name,
+              },
+              unit_amount: p.product.price * 100,
+            },
+            quantity: p.quantity,
+          };
+        }),
+        shipping_options: [
+          {
+            shipping_rate_data: {
+              type: "fixed_amount",
+              fixed_amount: {
+                amount: 150 * 100,
+                currency: "INR",
+              },
+              display_name: "Next day air",
+            },
+          },
+        ],
+        metadata: {
+          token: token,
+        },
+      })
+      .then(async (session) => {
+        return res.status(200).redirect(session.url);
+      });
+    res.status(401).json({ status: "ERROR", message: "Payment Failed" });
+  } catch (error) {
+    console.log(error);
+    const err = new Error("Could not place order!");
+    err.httpStatusCode = 500;
+    next(err);
+  }
+};
+
+exports.checkoutSuccess = async (req, res, next) => {
+  try {
+    const event = req.body;
+
+    let token;
+    if (event.type !== "checkout.session.completed") {
+      return res.status(400);
+    }
+    token = event.data.object.metadata.token;
+    let decodedData = await jwt.decode(token, process.env.JWT_KEY);
+    console.log(decodedData);
+
+    const userId = decodedData.userId;
+
+    const cart = await Cart.findOne({ userId })
+      .populate("items.product", "price name")
+      .exec();
 
     if (!cart) {
       return res
@@ -234,12 +324,10 @@ exports.checkout = async (req, res, next) => {
     await user.save();
     await order.save();
 
-    res
-      .status(200)
-      .json({ status: "SUCCESS", message: "Cart executed successfully!" });
+    return res.status(200);
   } catch (error) {
     console.log(error);
-    const err = new Error("Could not place order!");
+    const err = new Error("Could not checkout success");
     err.httpStatusCode = 500;
     next(err);
   }
