@@ -43,11 +43,12 @@ cartSchema.methods.calculateTotalPrice = function (couponCode) {
   }, 0);
 
   let deliveryCharge = 150;
-  let discountedPrice = totalItemsPrice + deliveryCharge;
+  let discountedPrice = totalItemsPrice;
 
   if (couponCode === "FLAT50") {
     discountedPrice = discountedPrice - discountedPrice / 2;
   }
+  discountedPrice = discountedPrice + deliveryCharge;
 
   this.couponCode = couponCode;
   this.totalPrice = discountedPrice;

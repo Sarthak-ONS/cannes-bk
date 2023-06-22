@@ -258,6 +258,11 @@ exports.checkout = async (req, res, next) => {
             },
           },
         ],
+        discounts: [
+          {
+            coupon: "gOj47W1N",
+          },
+        ],
         metadata: {
           token: token,
         },

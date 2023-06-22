@@ -11,4 +11,10 @@ router.put("/address", isAuth, userController.updateAddress);
 
 router.get("/orders", isAuth, userController.getOrders);
 
+router.get(
+  "/order/:orderId/invoice",
+  isAuth,
+  userController.generateOrderInvoice
+);
+
 module.exports = router;
