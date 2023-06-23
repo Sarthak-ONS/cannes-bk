@@ -10,7 +10,7 @@ const carouselElements = [
   },
   {
     id: "1",
-    title: "Level up your style with our summer collections",
+    title: "Enjoying this platoform with max enthusiasm",
     linkto: "",
     image:
       "https://images.pexels.com/photos/7679453/pexels-photo-7679453.jpeg?auto=compress",
