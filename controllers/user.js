@@ -155,8 +155,6 @@ exports.generateOrderInvoice = async (req, res, next) => {
       "ordersPDFs",
       `${order._id}.pdf`
     );
-
-    console.log("SENDING OLD ORDER INVOICE");
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",

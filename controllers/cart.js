@@ -232,50 +232,46 @@ exports.checkout = async (req, res, next) => {
 
     const token = user.getJwtToken();
 
-    await stripe.checkout.sessions
-      .create({
-        customer_email: user.email,
-        payment_method_types: ["card"],
-        mode: "payment",
-        success_url: process.env.FRONTEND_SERVER_URL + "/orders",
-        cancel_url: process.env.FRONTEND_SERVER_URL + "/cart",
-        line_items: cart.items.map((p) => {
-          return {
-            price_data: {
+    const session = await stripe.checkout.sessions.create({
+      customer_email: user.email,
+      payment_method_types: ["card"],
+      mode: "payment",
+      success_url: process.env.FRONTEND_SERVER_URL + "/orders",
+      cancel_url: process.env.FRONTEND_SERVER_URL + "/cart",
+      line_items: cart.items.map((p) => {
+        return {
+          price_data: {
+            currency: "INR",
+            product_data: {
+              name: p.product.name,
+            },
+            unit_amount: p.product.price * 100,
+          },
+          quantity: p.quantity,
+        };
+      }),
+      shipping_options: [
+        {
+          shipping_rate_data: {
+            type: "fixed_amount",
+            fixed_amount: {
+              amount: 150 * 100,
               currency: "INR",
-              product_data: {
-                name: p.product.name,
-              },
-              unit_amount: p.product.price * 100,
             },
-            quantity: p.quantity,
-          };
-        }),
-        shipping_options: [
-          {
-            shipping_rate_data: {
-              type: "fixed_amount",
-              fixed_amount: {
-                amount: 150 * 100,
-                currency: "INR",
-              },
-              display_name: "Next day air",
-            },
+            display_name: "Next day air",
           },
-        ],
-        discounts: [
-          {
-            coupon: "gOj47W1N",
-          },
-        ],
-        metadata: {
-          token: token,
         },
-      })
-      .then(async (session) => {
-        return res.status(200).redirect(session.url);
-      });
-    res.status(401).json({ status: "ERROR", message: "Payment Failed" });
+      ],
+      discounts: [
+        {
+          coupon: "gOj47W1N",
+        },
+      ],
+      metadata: {
+        token: token,
+      },
+    });
+    return res.status(200).json({ status: "REDIRECT", url: session.url });
   } catch (error) {
     console.log(error);
     const err = new Error("Could not place order!");
@@ -286,11 +282,15 @@ exports.checkout = async (req, res, next) => {
 
 exports.checkoutSuccess = async (req, res, next) => {
   try {
+    console.log("STRIPE GATEWAY SENDED A RESPONSE");
     const event = req.body;
 
+    console.log(event, "       This is the event");
+
     let token;
-    if (event.type !== "checkout.session.completed") {
-      return res.status(400);
+    if (!event || event.type !== "checkout.session.completed") {
+      console.log("EVENT NOT MATCHED");
+      return res.sendStatus(400);
     }
     token = event.data.object.metadata.token;
     let decodedData = await jwt.decode(token, process.env.JWT_KEY);
@@ -321,6 +321,8 @@ exports.checkoutSuccess = async (req, res, next) => {
       totalAmount: cart.totalPrice,
     });
 
+    console.log(order);
+
     const doc = new PDFDocument();
     const stream = fs.createWriteStream(
       path.join(__dirname, "../", "ordersPDFs", `${order._id}.pdf`)
@@ -338,16 +340,16 @@ exports.checkoutSuccess = async (req, res, next) => {
 
     doc.fontSize(14).text("ShippingAddress:", { underline: true });
     doc.text(
-      `${user.shippingAddress.street}, ${user.shippingAddress.city}, ${user.shippingAddress.state}, ${order.shippingAddress.country}`
+      `${user.address.street}, ${user.address.city}, ${user.address.state}, ${user.address.country}`
     );
-    doc.text("Pincode : " + user.shippingAddress.postalCode);
+    doc.text("Pincode : " + user.address.postalCode);
     doc.moveDown();
     doc.moveDown();
 
     // Order details
     doc.fontSize(14).text("Order Details:", { underline: true });
 
-    order.products.forEach((item, index) => {
+    cart.items.forEach((item, index) => {
       doc.text(`${index + 1}. Product: ${item.product.name}`);
       doc.text(`   Quantity: ${item.quantity}`);
       doc.text(`   Price: Rs. ${item.product.price}`);
@@ -367,13 +369,13 @@ exports.checkoutSuccess = async (req, res, next) => {
       path: order._id,
     };
 
-    await sendMail(options);
     await Cart.findOneAndDelete({ userId });
     await user.save();
     await order.save();
+    await sendMail(options);
     logger.info({ userId, message: "WROTE TO EMAIL" });
 
-    return res.status(200);
+    return res.sendStatus(200);
   } catch (error) {
     console.log(error);
     const err = new Error("Could not checkout success");
