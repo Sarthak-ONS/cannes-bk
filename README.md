@@ -1,8 +1,7 @@
 
 # Cannes: The E-Commerce App | Built with MERN Stack
 
-This is a full stack project for an e-commerce web application that provides features such as user authentication, products management, order processing, payment gateway integration, and inventory management. The following services have been used in this app:
-
+This is a full stack project for an e-commerce web application that provides features such as user authentication, products management, order processing, payment gateway integration, and inventory management
 
 
 ## Features
