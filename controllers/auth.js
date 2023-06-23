@@ -99,7 +99,7 @@ exports.verifyEmail = async (req, res, next) => {
     user.verificationToken = undefined;
 
     await user.save();
-    res.status(200).json({ status: "SUCCESS", message: "User is verified" });
+    res.status(200).send("<h1>You are verified, You may now login!</h2>");
   } catch (error) {
     console.log(error);
     const err = new Error("Could not Verify User");

@@ -156,64 +156,16 @@ exports.generateOrderInvoice = async (req, res, next) => {
       `${order._id}.pdf`
     );
 
-    if (fs.existsSync(filePath)) {
-      console.log("SENDING OLD ORDER INVOICE");
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename=${`${order._id}.pdf`}`
-      );
-
-      const fileStream = fs.createReadStream(filePath);
-      fileStream.pipe(res);
-      return;
-    }
-    console.log("GENERATING NEW ORDER INVOICE");
-
-    const doc = new PDFDocument();
-    const stream = fs.createWriteStream(
-      path.join(__dirname, "../", "ordersPDFs", `${order._id}.pdf`)
-    );
-
+    console.log("SENDING OLD ORDER INVOICE");
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
       `attachment; filename=${`${order._id}.pdf`}`
     );
 
-    doc.pipe(stream);
-    doc.pipe(res);
-    doc.fontSize(20).text("Invoice", { align: "center" });
-    doc.moveDown();
-
-    doc.fontSize(14).text("Bill To:", { underline: true });
-    doc.text(`Customer Name: ${order.user.name}`);
-    doc.text(`Customer Email: ${order.user.email}`);
-    doc.moveDown();
-
-    doc.fontSize(14).text("ShippingAddress:", { underline: true });
-    doc.text(
-      `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.state}, ${order.shippingAddress.country}`
-    );
-    doc.text("Pincode : " + order.shippingAddress.postalCode);
-    doc.moveDown();
-    doc.moveDown();
-
-    // Order details
-    doc.fontSize(14).text("Order Details:", { underline: true });
-
-    order.products.forEach((item, index) => {
-      doc.text(`${index + 1}. Product: ${item.product.name}`);
-      doc.text(`   Quantity: ${item.quantity}`);
-      doc.text(`   Price: Rs. ${item.product.price}`);
-      doc.moveDown();
-    });
-
-    doc.fontSize(16).text(`Total Amount: Rs. ${order.totalAmount}`, {
-      align: "right",
-    });
-    doc.moveDown();
-    doc.end();
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+    return;
   } catch (error) {
     console.log(error);
     const err = new Error("Could not generate invoice");

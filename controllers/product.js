@@ -98,10 +98,8 @@ exports.postAddReview = async (req, res, next) => {
       return next(err);
     }
 
-    const { text } = req.body;
+    const { text, rating } = req.body;
     const { productId } = req.params;
-
-    console.log(productId);
 
     const product = await Product.findById(productId);
 
@@ -110,11 +108,20 @@ exports.postAddReview = async (req, res, next) => {
         .status(404)
         .json({ status: "ERROR", message: "No Product found" });
     }
+    console.log(productId, text, rating, product.name);
+
     if (!product.reviews) {
       product.reviews = [];
     }
 
+    if (!product.ratings) {
+      product.ratings = [];
+    }
+
     const isAlreadyReviewdByUser = product.reviews.find(
+      (item) => item.userId.toString() === req.userId
+    );
+    const isAlreadyRated = product.ratings.find(
       (item) => item.userId.toString() === req.userId
     );
 
@@ -123,11 +130,23 @@ exports.postAddReview = async (req, res, next) => {
         .status(400)
         .json({ status: "ERROR", message: "User already added a review" });
     }
+    if (isAlreadyRated) {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "User already added a rating" });
+    }
 
     let newReview = {
       userId: req.userId,
       text,
     };
+
+    let newRating = {
+      userId: req.userId,
+      rating,
+    };
+
+    product.ratings.push(newRating);
 
     product.reviews.push(newReview);
 

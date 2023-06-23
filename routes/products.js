@@ -14,6 +14,7 @@ router.post(
   "/:productId/review",
   isAuth,
   body("text", "Invalid Review Text").trim().isLength({ min: 25, max: 150 }),
+  body("rating", "Invalid rating value").isInt({ max: 5, min: 1 }),
   productController.postAddReview
 );
 
@@ -32,7 +33,10 @@ router.patch(
 router.post(
   "/:productId/rating",
   isAuth,
-  body("rating", "Invalid rating value").isInt(),
+  [
+    body("rating", "Invalid rating value").isInt(),
+    body("rating", "Invalid rating value").isInt(),
+  ],
   productController.addProductRating
 );
 router.delete(

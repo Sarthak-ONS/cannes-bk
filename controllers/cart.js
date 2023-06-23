@@ -9,6 +9,11 @@ const jwt = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.STRIPE_API_KEY);
 
 const { validationResult } = require("express-validator");
+const { sendMail } = require("../utils/email-util");
+
+const fs = require("fs");
+const PDFDocument = require("pdfkit");
+const path = require("path");
 
 exports.getUserCart = async (req, res, next) => {
   try {
@@ -297,25 +302,17 @@ exports.checkoutSuccess = async (req, res, next) => {
       .populate("items.product", "price name")
       .exec();
 
+    console.log(cart);
+
     if (!cart) {
       return res
         .status(400)
         .json({ status: "ERROR", message: "No cart found" });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).populate("address").exec();
 
-    if (!user.isVerified) {
-      res.status(401).json({ status: "ERROR", message: "User not verified" });
-    }
-
-    if (!user.address) {
-      res
-        .status(400)
-        .json({ status: "ERROR", message: "Please add a address" });
-    }
-
-    console.log(cart);
+    console.log(user);
 
     const order = await Order.create({
       user: userId,
@@ -324,10 +321,57 @@ exports.checkoutSuccess = async (req, res, next) => {
       totalAmount: cart.totalPrice,
     });
 
-    await Cart.findOneAndDelete({ userId });
+    const doc = new PDFDocument();
+    const stream = fs.createWriteStream(
+      path.join(__dirname, "../", "ordersPDFs", `${order._id}.pdf`)
+    );
 
+    doc.pipe(stream);
+    doc.fontSize(24).text("Cannes", { align: "center" });
+    doc.fontSize(20).text("Invoice", { align: "center" });
+    doc.moveDown();
+
+    doc.fontSize(14).text("Bill To:", { underline: true });
+    doc.text(`Customer Name: ${user.name}`);
+    doc.text(`Customer Email: ${user.email}`);
+    doc.moveDown();
+
+    doc.fontSize(14).text("ShippingAddress:", { underline: true });
+    doc.text(
+      `${user.shippingAddress.street}, ${user.shippingAddress.city}, ${user.shippingAddress.state}, ${order.shippingAddress.country}`
+    );
+    doc.text("Pincode : " + user.shippingAddress.postalCode);
+    doc.moveDown();
+    doc.moveDown();
+
+    // Order details
+    doc.fontSize(14).text("Order Details:", { underline: true });
+
+    order.products.forEach((item, index) => {
+      doc.text(`${index + 1}. Product: ${item.product.name}`);
+      doc.text(`   Quantity: ${item.quantity}`);
+      doc.text(`   Price: Rs. ${item.product.price}`);
+      doc.moveDown();
+    });
+
+    doc.fontSize(16).text(`Total Amount: Rs. ${order.totalAmount}`, {
+      align: "right",
+    });
+    doc.moveDown();
+    doc.end();
+
+    const options = {
+      email: user.email,
+      subject: `Invoice of Order`,
+      html: "Please find attached invoice of your order",
+      path: order._id,
+    };
+
+    await sendMail(options);
+    await Cart.findOneAndDelete({ userId });
     await user.save();
     await order.save();
+    logger.info({ userId, message: "WROTE TO EMAIL" });
 
     return res.status(200);
   } catch (error) {
