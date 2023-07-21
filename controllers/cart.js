@@ -34,7 +34,7 @@ exports.getUserCart = async (req, res, next) => {
 
     const totalPrice = cart.calculateTotalPrice(cart.couponCode);
     await cart.save();
-
+    logger.info(`USER CART SENT`, { userId });
     return res.status(200).json({ status: "SUCCESS", cart });
   } catch (error) {
     console.log(error);
@@ -102,7 +102,7 @@ exports.addtoCart = async (req, res, next) => {
     }
     await cart.save();
 
-    logger.info(`PRODUCT ADDED TO CARD`, { userId });
+    logger.info(`PRODUCT ADDED TO CART`, { userId });
 
     return res.status(200).json({ status: "SUCCESS", cart });
   } catch (error) {
@@ -146,7 +146,7 @@ exports.removeFromCart = async (req, res, next) => {
     }
 
     await cart.save();
-
+    logger.info(`${productId} REMOVE FROM CART`, { userId });
     res.status(200).json({ status: "SUCCESS", cart });
   } catch (error) {
     console.log(error);
@@ -156,13 +156,12 @@ exports.removeFromCart = async (req, res, next) => {
   }
 };
 
-exports.updateCartItem = async (req, res, next) => {};
-
 exports.clearCart = async (req, res, next) => {
   const userId = req.userId;
 
   try {
     await Cart.findOneAndDelete({ userId });
+    logger.info(`USER CART CLEARED`, { userId });
     res.status(200).json({ status: "SUCCESS", message: "Cleared Cart" });
   } catch (error) {
     const err = new Error("Could not clear Cart");
@@ -190,6 +189,7 @@ exports.applyDiscountOnCart = async (req, res, next) => {
         .json({ status: "ERROR", message: "Cart not found" });
     }
     cart.calculateTotalPrice(couponCode);
+    logger.info(`COUPON CODE APPLIED ON CART`);
     await cart.save();
     res.status(200).json({
       status: "SUCCESS",
