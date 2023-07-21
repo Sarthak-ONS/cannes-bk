@@ -6,7 +6,7 @@ const cookie = require("cookie");
 
 const jwt = require("jsonwebtoken");
 
-const User = require("../models/user");
+const User = require("../../models/user");
 
 passport.use(
   new GoogleStrategy(
@@ -42,8 +42,8 @@ const router = express.Router();
 
 router.use(passport.initialize());
 
-const authController = require("../controllers/auth");
-const isAuth = require("../middlewares/isAuth");
+const authController = require("../../controllers/auth");
+const isAuth = require("../../middlewares/isAuth");
 
 // POST Login Routes
 router.post(

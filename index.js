@@ -13,11 +13,14 @@ const cors = require("cors");
 
 // const helmet = require("helmet");
 
-const authRoutes = require("./routes/auth");
+const authRoutes = require("./routes/Auth/auth");
 const userRoutes = require("./routes/user");
 const productRoutes = require("./routes/products");
 const cartRoutes = require("./routes/cart");
 const uiRoutes = require("./routes/ui");
+
+// Version 2 Auth Routes
+const authRoutesV2 = require("./routes/Auth/v2/auth");
 
 const mediaRouter = require("./routes/media");
 
@@ -72,6 +75,8 @@ app.use("/product", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/cdn", mediaRouter);
 app.use("/ui", uiRoutes);
+
+app.use("/auth/v2", authRoutesV2);
 
 app.use((error, req, res, next) => {
   return res.status(error.httpStatusCode || 500).json({
