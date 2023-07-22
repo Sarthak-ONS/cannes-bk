@@ -19,13 +19,14 @@ app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Handle Cors Policy
+// Handler: Cors Policy
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -35,7 +36,7 @@ app.use(
   })
 );
 
-// Handler File Upload
+// Handler: File Upload
 app.use(
   fileUpload({
     useTempFiles: true,

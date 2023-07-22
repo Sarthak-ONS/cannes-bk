@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const otpController = require("../../../controllers/v2/auth");
+const otpController = require("../../controllers/v2/auth");
 
 router.post("/otp/send", otpController.requestOTP);
 
