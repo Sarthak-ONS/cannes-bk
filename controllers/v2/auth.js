@@ -31,6 +31,7 @@ exports.requestOTP = async (req, res, next) => {
       verificationId: uid,
     });
   } catch (error) {
+    console.log(error);
     const err = new Error("Failed to send OTP!");
     err.httpStatusCode = 500;
     next(err);
@@ -57,7 +58,7 @@ exports.verifyOTP = async (req, res, next) => {
         .json({ message: "OTP expired. Please request a new OTP." });
     }
     if (otp !== otpSession.otp) {
-      res.status(400).json({ message: "Invalid OTP code!" });
+      return res.status(400).json({ message: "Invalid OTP code!" });
     }
     await OTP.findOneAndDelete({ phoneNumber, sessionId: verificationId });
     res.json({ message: "OTP verified successfully!" });
